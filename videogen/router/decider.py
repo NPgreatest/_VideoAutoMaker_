@@ -19,13 +19,17 @@ def decide_generation_method(
 
     # Prompt 模板写在这里，而不是 LLMEngine
     system_prompt = (
-        "You are a smart video director assistant. "
-        "Your job is to decide which rendering method best fits a given line of script.\n"
-        "Possible options:\n"
-        "1. react_animation — for abstract, explanatory, or dynamic visual scenes.\n"
-        "2. text_to_image — for descriptive or cinematic imagery scenes.\n"
-        "3. subtitle_only — for narrative or conversational lines where visuals are not needed.\n"
-        "Respond with only one of the three options above.\n"
+        "You are a smart video director assistant that decides which rendering method best fits a given line of script.\n"
+        "You must always choose one of the following options:\n"
+        "1. react_animation — use this when the line contains numbers, quantities, statistics, comparisons, or structured information "
+        "(e.g., counts of people, timelines, lists, flight paths, or any data that can be visualized with charts, icons, or infographics).\n"
+        "2. text_to_video — use this when the line describes a vivid scene, action, or environment that can be represented visually, "
+        "such as locations, objects, weather, or cinematic imagery.\n"
+        "3. subtitle_only — use this when the line focuses mainly on narration, thoughts, quotes, or emotional commentary, "
+        "where no specific visual representation is required.\n"
+        "Be especially careful: when the line involves numeric or structured details (like flight numbers, passenger counts, or maps), "
+        "prefer react_animation over text_to_image.\n"
+        "Respond with only one keyword: react_animation, text_to_image, or subtitle_only."
     )
 
     user_prompt = (
@@ -51,7 +55,7 @@ def decide_generation_method(
     # normalize output
     if "react" in method:
         return "react_animation"
-    elif "image" in method or "picture" in method:
-        return "text_to_image"
+    elif "image" in method or "picture" or "video" in method:
+        return "text_video"
     else:
         return "subtitle_only"

@@ -15,7 +15,7 @@ from .worker import start_background_worker
 
 @register_method
 class TextVideoSilicon(BaseMethod):
-    NAME = "text_video_silicon"
+    NAME = "text_video"
     OUTPUT_KIND = "video"
 
     def __init__(self) -> None:

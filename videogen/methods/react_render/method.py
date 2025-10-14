@@ -150,7 +150,7 @@ class ReactRenderMethod(BaseMethod):
       {workdir}/project/{project}/index.html
       {workdir}/project/{project}/{target_name}.mp4  (若无 ffmpeg 则为 .webm)
     """
-    NAME = "react_prompt_render"
+    NAME = "react_animation"
     OUTPUT_KIND = "video"
 
     DEFAULT_W = 1280
