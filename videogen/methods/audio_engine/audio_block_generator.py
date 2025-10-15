@@ -22,12 +22,12 @@ TTS_URL = f"http://{TTS_SERVER_IP}:{TTS_PORT}/tts"
 
 # 默认参数（每次请求会 copy 一份再覆盖）
 DEFAULT_TTS_PARAMS = {
-    "text_lang": "en",
+    "text_lang": "zh",
     "cut_punc": "。，？",
     "speed": "1.4",
     "ref_audio_path": "output/reference.wav",
     "prompt_text": "就是跟他这个成长的外部环境有关系，和本身的素质也有关系，他是一个",
-    "prompt_lang": "en",
+    "prompt_lang": "zh",
     "text_split_method": "cut5",
     "batch_size": 1,
     "media_type": "wav",
@@ -225,7 +225,8 @@ class AudioEngineMethod(BaseMethod):
         project: str,
         target_name: str,
         text: str,
-        workdir: Path
+        workdir: Path,
+        duration_ms: int | None = None
     ) -> Dict[str, Any]:
         try:
             script_text = (text or prompt or "").strip()

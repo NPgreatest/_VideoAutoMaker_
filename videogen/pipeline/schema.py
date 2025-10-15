@@ -28,19 +28,17 @@ class Decision:
 class ScriptBlock:
     id: str
     text: str
+    prompt: str = ""
     context: str = ""
     decision: Optional[Decision] = None
     generation: Optional[GenerationResult] = None
-    status: str = "pending"  # pending | done | error | regenerate
+    status: str = "pending"
     retries: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
-        d = asdict(self)
-        if self.decision:
-            d["decision"] = asdict(self.decision)
-        if self.generation:
-            d["generation"] = asdict(self.generation)
-        return d
+        # asdict 会递归转换所有 dataclass 子字段
+        return asdict(self)
+
 
 
 @dataclass

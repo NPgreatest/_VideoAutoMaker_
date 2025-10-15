@@ -11,6 +11,7 @@ from videogen.methods.text_video_silicon.constants import (
 from .sf_api import submit_video
 from .store import TaskCSV
 from .worker import start_background_worker
+from ...llm_engine import get_engine
 
 
 @register_method
@@ -96,3 +97,30 @@ class TextVideoSilicon(BaseMethod):
             },
             "error": None,
         }
+
+
+    def generate_prompt(self, text: str) -> str:
+        engine = get_engine()
+
+        system_prompt = (
+            "You are a cinematic director helping to convert text into a vivid, realistic video scene.\n"
+            "You describe camera movement, lighting, mood, and environment.\n"
+            "Avoid charts or UI elements; instead, focus on natural visuals — people, objects, weather, or motion.\n"
+            "The output will be used as a prompt for a text-to-video model."
+        )
+        user_prompt = (
+            f"Line: {text}\n\n"
+            "Describe the scene in cinematic language — specify the setting, camera angle, lighting, atmosphere, "
+            "and any actions or movements happening. "
+            "Keep it short but vivid."
+        )
+
+        res = engine.chat(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=0.6,
+            max_tokens=300,
+        )
+        return res["content"].strip()

@@ -172,7 +172,7 @@ class ReactRenderMethod(BaseMethod):
 
         out_dir = workdir / "project" / project
         out_dir.mkdir(parents=True, exist_ok=True)
-        out_html = out_dir / "index.html"
+        out_html = out_dir / f"{target_name}.html"
         out_video = out_dir / f"{target_name}.mp4"
 
         width = self.DEFAULT_W
@@ -266,3 +266,30 @@ class ReactRenderMethod(BaseMethod):
             },
             "error": None
         }
+
+    def generate_prompt(self, text: str) -> str:
+        engine = get_engine()
+
+        system_prompt = (
+            "You are a professional motion designer creating educational or explanatory scenes in React JSX.\n"
+            "You visualize structured or numerical information (counts, lists, flight paths, timelines, etc.).\n"
+            "Your goal is to describe a clean, elegant, data-driven animation scene.\n"
+            "The result will later be converted into React code, so focus on clear visual layout and composition.\n"
+            "Avoid cinematic storytelling or people; instead, focus on charts, maps, or UI-like animations.\n"
+        )
+        user_prompt = (
+            f"Line: {text}\n\n"
+            "Describe what kind of React animation should visualize this information. "
+            "Mention elements (icons, text labels, bars, flight paths, charts) and how they animate. "
+            "Avoid writing JSX, only describe the intended look and movement."
+        )
+
+        res = engine.chat(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=0.4,
+            max_tokens=300,
+        )
+        return res["content"].strip()

@@ -21,3 +21,10 @@ class BaseMethod(abc.ABC):
         }}
         """
         raise NotImplementedError
+
+
+    def generate_prompt(self, text: str) -> str:
+        """Execute the method and return a str:
+        prompt...
+        """
+        raise NotImplementedError
