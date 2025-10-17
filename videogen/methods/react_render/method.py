@@ -67,7 +67,7 @@ def _build_index_html(title: str, width: int, height: int, jsx: str, duration_se
             .replace("{{REACT_UMD}}", REACT_UMD)
             .replace("{{REACTDOM_UMD}}", REACTDOM_UMD)
             .replace("{{BABEL_UMD}}", BABEL_UMD)
-            .replace("{{DURATION_MS}}", str(int(max(0.5, duration_sec) * 1000)))
+            .replace("{{DURATION_MS}}", str(int(duration_sec) * 1000))
             # .replace("{{SUBTITLE}}", html.escape(subtitle or ""))
             .replace("{{SCENE_BABEL}}", f"<script type=\"text/babel\">\n{jsx}\n</script>")
             )
@@ -181,10 +181,10 @@ class ReactRenderMethod(BaseMethod):
         # 若外部传入毫秒数则使用；否则使用默认秒数
         if duration_ms is not None:
             duration_ms_final = int(duration_ms)
-            duration_sec = max(0.5, duration_ms_final / 1000.0)
+            duration_sec = duration_ms_final / 1000.0
         else:
             duration_sec = self.DEFAULT_SEC
-            duration_ms_final = int(duration_sec * 1000)
+            duration_ms_final = int(duration_sec) * 1000
 
         subtitle = prompt or ""   # 用 prompt 当字幕，纯可选
 

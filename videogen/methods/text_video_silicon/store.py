@@ -1,52 +1,43 @@
-from __future__ import annotations
-import csv, shutil, threading
+import csv, threading
 from pathlib import Path
-from typing import Dict, List, Optional
-
-CSV_FIELDS = [
-    "request_id","project","target_name","prompt","model","status",
-    "output_path","source_url","created_ts","updated_ts","error","poll_count","workdir",
-]
+from typing import Dict, List
 
 class TaskCSV:
-    """线程安全 + 原子写入的 CSV 小库"""
-    def __init__(self, db_path: Path) -> None:
-        self.db_path = db_path
+    _lock = threading.Lock()  # fine now, no nested locks
+
+    def __init__(self, db_path: Path):
+        self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self._lock = threading.Lock()
-        self._rows: Dict[str, Dict[str, str]] = {}
-        self._load()
-
-    def _load(self) -> None:
         if not self.db_path.exists():
-            with self.db_path.open("w", newline="", encoding="utf-8") as f:
-                csv.DictWriter(f, fieldnames=CSV_FIELDS).writeheader()
-            return
-        with self.db_path.open("r", newline="", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                self._rows[row["request_id"]] = row
+            with open(self.db_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(f, fieldnames=["request_id", "status", "output_path"])
+                writer.writeheader()
 
-    def _flush(self) -> None:
-        tmp = self.db_path.with_suffix(".tmp")
-        with tmp.open("w", newline="", encoding="utf-8") as f:
-            w = csv.DictWriter(f, fieldnames=CSV_FIELDS)
-            w.writeheader()
-            for r in self._rows.values(): w.writerow(r)
-        shutil.move(str(tmp), str(self.db_path))  # 原子替换
+    def get_all(self) -> List[Dict[str, str]]:
+        if not self.db_path.exists():
+            return []
+        with open(self.db_path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            return [row for row in reader]
 
     def upsert(self, row: Dict[str, str]) -> None:
         with self._lock:
-            norm = {k: "" for k in CSV_FIELDS}
-            for k, v in row.items():
-                if k in norm: norm[k] = "" if v is None else str(v)
-            self._rows[norm["request_id"]] = norm
-            self._flush()
+            rows = self.get_all()
+            rid = row.get("request_id")
+            updated = False
+            for r in rows:
+                if r.get("request_id") == rid:
+                    r.update(row)
+                    updated = True
+                    break
+            if not updated:
+                rows.append(row)
 
-    def get_all(self) -> List[Dict[str, str]]:
-        with self._lock:
-            return list(self._rows.values())
+            fieldnames = sorted(set().union(*(r.keys() for r in rows)))
+            with open(self.db_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(rows)
+                f.flush()
 
-    def get(self, request_id: str) -> Optional[Dict[str, str]]:
-        with self._lock:
-            return self._rows.get(request_id)
+        print(f"[TaskCSV] ✅ Upserted {rid} (status={row.get('status')})")

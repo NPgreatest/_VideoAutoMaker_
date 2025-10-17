@@ -32,6 +32,7 @@ class ScriptBlock:
     context: str = ""
     decision: Optional[Decision] = None
     generation: Optional[GenerationResult] = None
+    audioGeneration: Optional[GenerationResult] = None
     status: str = "pending"
     retries: int = 0
 

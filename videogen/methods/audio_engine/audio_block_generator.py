@@ -10,6 +10,7 @@ import requests
 from dotenv import load_dotenv
 from pydub.utils import mediainfo
 
+from .utils import get_total_audio_duration_ms
 from ..base import BaseMethod
 from ..registry import register_method
 
@@ -32,6 +33,7 @@ DEFAULT_TTS_PARAMS = {
     "batch_size": 1,
     "media_type": "wav",
     "streaming_mode": "true",
+    "speed_factor" : 1.2,
 }
 
 # ----------------- 工具函数 -----------------
@@ -95,42 +97,68 @@ def _format_time(seconds: float) -> str:
     ms = int(round((seconds - int(seconds)) * 1000))
     return f"{int(hours):02}:{int(mins):02}:{int(secs)%60:02},{ms:03}"
 
-def _get_audio_duration(audio_path: Path) -> float:
-    try:
-        info = mediainfo(str(audio_path))
-        return float(info.get("duration", 0.0))
-    except Exception:
-        return 0.0
 
 def _has_ffmpeg() -> bool:
     from shutil import which
     return which("ffmpeg") is not None
 
+import subprocess, shlex
+from pathlib import Path
+from typing import List
+
 def _concat_wavs_with_ffmpeg(wav_paths: List[Path], out_path: Path) -> bool:
     if not wav_paths:
+        print("[concat] no wav files")
         return False
-    if not _has_ffmpeg():
-        return False
-    # 写临时 concat list
+    # absolute, safely-quoted paths
     lst = out_path.with_suffix(".txt")
-    lst.write_text("\n".join([f"file '{p.as_posix()}'" for p in wav_paths]), encoding="utf-8")
+    lines = [f"file {shlex.quote(str(p.resolve()))}" for p in wav_paths]
+    lst.write_text("\n".join(lines), encoding="utf-8")
+
+    # first try lossless copy
     cmd = [
-        "ffmpeg", "-y",
-        "-f", "concat",
-        "-safe", "0",
-        "-i", str(lst),
-        "-c", "copy",  # 无损拼接，要求格式一致
-        str(out_path),
+        "ffmpeg","-y",
+        "-f","concat","-safe","0",
+        "-i",str(lst),
+        "-c","copy",
+        str(out_path)
     ]
+    print(f"[concat] {' '.join(cmd)}")
     try:
-        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        try: lst.unlink()
-        except Exception: pass
+        subprocess.run(cmd, check=True)
+        print(f"[concat] success (copy) -> {out_path}")
         return True
-    except Exception:
-        try: lst.unlink()
-        except Exception: pass
-        return False
+    except subprocess.CalledProcessError as e:
+        print(f"[concat] copy mode failed ({e.returncode}), retrying with re-encode…")
+
+        # fallback: force uniform pcm_s16le
+        cmd = [
+            "ffmpeg","-y",
+            "-f","concat","-safe","0",
+            "-i",str(lst),
+            "-ar","44100","-ac","2",
+            "-c:a","pcm_s16le",
+            str(out_path)
+        ]
+        print(f"[concat] {' '.join(cmd)}")
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        if proc.returncode == 0:
+            print(f"[concat] success (re-encoded) -> {out_path}")
+            return True
+        else:
+            print("[concat] re-encode failed")
+            print("---- STDOUT ----")
+            print(proc.stdout)
+            print("---- STDERR ----")
+            print(proc.stderr)
+            print("----------------")
+            return False
+    finally:
+        try:
+            lst.unlink()
+        except Exception:
+            pass
+
 
 def _tts_request(params: Dict[str, Any], out_path: Path) -> bool:
     try:
@@ -156,12 +184,12 @@ def _gen_block_audio(
     character: str = "default",
     emotion: str = "neutral",
     regen: bool = True,
-) -> Tuple[List[Path], str, float]:
+) -> Tuple[List[Path], str, int]:
     """
     逐段生成音频，返回：
       - wav 分段路径列表
       - srt 文本
-      - 总时长（秒）
+      - 总时长（毫秒）
     """
     clips = _split_text_into_clips(script_text)
     audio_dir = project_dir / "audio"
@@ -171,7 +199,7 @@ def _gen_block_audio(
 
     overrides = _switch_character_model(cfg, character, emotion)
 
-    current_time = 0.0
+    current_time_ms = 0
     srt_lines: List[str] = []
     out_wavs: List[Path] = []
 
@@ -186,21 +214,23 @@ def _gen_block_audio(
             params["text"] = clip
             ok = _tts_request(params, wav_path)
             if not ok:
-                # 失败也写个空音频（0秒），避免时间线错乱
                 print(f"[TTS] Failed for clip {i}, inserting 0s placeholder.")
                 wav_path.touch()
 
-        dur = _get_audio_duration(wav_path)
-        start = current_time
-        end = current_time + dur
-        current_time = end
+        # duration in ms
+        dur_ms = get_total_audio_duration_ms(wav_path)
+        start_ms = current_time_ms
+        end_ms = current_time_ms + dur_ms
+        current_time_ms = end_ms
 
         out_wavs.append(wav_path)
-        srt_lines.append(f"{i}\n{_format_time(start)} --> {_format_time(end)}\n{clip}\n\n")
+        srt_lines.append(
+            f"{i}\n{_format_time(start_ms / 1000)} --> {_format_time(end_ms / 1000)}\n{clip}\n\n"
+        )
 
     srt_text = "".join(srt_lines)
-    total_dur = current_time
-    return out_wavs, srt_text, total_dur
+    total_ms = current_time_ms
+    return out_wavs, srt_text, total_ms
 
 
 @register_method

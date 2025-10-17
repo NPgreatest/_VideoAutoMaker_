@@ -1,7 +1,7 @@
 from __future__ import annotations
 import time
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from videogen.methods.base import BaseMethod
 from videogen.methods.registry import register_method
@@ -12,6 +12,7 @@ from .sf_api import submit_video
 from .store import TaskCSV
 from .worker import start_background_worker
 from ...llm_engine import get_engine
+from ...pipeline.schema import ScriptBlock
 
 
 @register_method
@@ -42,26 +43,19 @@ class TextVideoSilicon(BaseMethod):
         text: str,
         workdir: Path,
         duration_ms: int | None = None,
+        block: Optional[ScriptBlock] = None
     ) -> Dict[str, Any]:
         if not SILICONFLOW_API_TOKEN:
-            return {
-                "ok": False,
-                "artifacts": [],
-                "meta": {},
-                "error": "Missing SILICONFLOW_API_TOKEN.",
-            }
+            return {"ok": False, "artifacts": [], "meta": {}, "error": "Missing SILICONFLOW_API_TOKEN."}
 
         # 提交任务
-        request_id = submit_video(prompt)
+        if block and block.generation and block.generation.ok and 'request_id' in block.generation.meta:
+            request_id = block.generation.meta['request_id']
+        else:
+            request_id = submit_video(prompt)
         if not request_id:
-            return {
-                "ok": False,
-                "artifacts": [],
-                "meta": {},
-                "error": "Submit failed (no requestId).",
-            }
+            return {"ok": False, "artifacts": [], "meta": {}, "error": "Submit failed (no requestId)."}
 
-        # 存入全局 CSV
         store = self._get_store(workdir)
         now = time.time()
         row = {
@@ -78,6 +72,7 @@ class TextVideoSilicon(BaseMethod):
             "error": "",
             "poll_count": "0",
             "workdir": str(workdir.resolve()),
+            "duration": str(duration_ms / 1000 if duration_ms else 5.0),
         }
         store.upsert(row)
 
@@ -90,29 +85,38 @@ class TextVideoSilicon(BaseMethod):
                 "project": project,
                 "target_name": target_name,
                 "status": STATUS_SUBMITTED,
-                "output_path": str(
-                    workdir / "project" / project / f"{target_name}.mp4"
-                ),
+                "output_path": str(workdir / "project" / project / f"{target_name}.mp4"),
                 "db_path": str(db_path),
             },
             "error": None,
         }
 
-
     def generate_prompt(self, text: str) -> str:
+        """
+        Convert a line of dialogue into a vivid cinematic scene prompt for text-to-video models (e.g. Sora, Runway).
+        Uses an English few-shot example to demonstrate desired style and structure.
+        """
         engine = get_engine()
 
         system_prompt = (
-            "You are a cinematic director helping to convert text into a vivid, realistic video scene.\n"
-            "You describe camera movement, lighting, mood, and environment.\n"
-            "Avoid charts or UI elements; instead, focus on natural visuals — people, objects, weather, or motion.\n"
-            "The output will be used as a prompt for a text-to-video model."
+            "You are an expert cinematic visual director who converts dialogue lines "
+            "into vivid scene descriptions for text-to-video generation models like Sora or Runway.\n"
+            "Focus only on what the camera would show: the environment, lighting, motion, and atmosphere.\n"
+            "Do not describe sound, dialogue, or voice-over. Your output must feel cinematic and visual.\n\n"
+            "=== EXAMPLE ===\n\n"
+            "Input line:\n"
+            "\"This is the moment when the meteor struck the Earth.\"\n\n"
+            "Output:\n"
+            "A blazing meteor streaks through the night sky, leaving a trail of fire and smoke. "
+            "The camera follows it in slow motion as it descends toward a vast desert landscape. "
+            "Upon impact, a shockwave of light and dust erupts into the air, illuminating the horizon in orange and white. "
+            "=== END OF EXAMPLE ===\n"
+            "Now generate a similar cinematic description for the following line."
         )
+
         user_prompt = (
-            f"Line: {text}\n\n"
-            "Describe the scene in cinematic language — specify the setting, camera angle, lighting, atmosphere, "
-            "and any actions or movements happening. "
-            "Keep it short but vivid."
+            f"Input line:\n{text.strip()}\n\n"
+            "Output:"
         )
 
         res = engine.chat(
@@ -121,6 +125,14 @@ class TextVideoSilicon(BaseMethod):
                 {"role": "user", "content": user_prompt},
             ],
             temperature=0.6,
-            max_tokens=300,
+            max_tokens=400,
         )
-        return res["content"].strip()
+
+        content = res["content"].strip()
+
+
+        prompt = "\n".join(
+            l for l in content.splitlines() if not l.strip().lower().startswith("title:")
+        ).strip()
+
+        return prompt

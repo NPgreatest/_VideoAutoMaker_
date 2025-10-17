@@ -1,7 +1,7 @@
 {
   "project": "mh370_demo",
   "created_at": "2025-10-13T17:00:00Z",
-  "updated_at": "2025-10-14T04:45:02+00:00",
+  "updated_at": "2025-10-16T01:49:51+00:00",
   "script": [
     {
       "id": "L1",
@@ -13,8 +13,50 @@
         "confidence": 1.0,
         "decided_by": "llm"
       },
-      "generation": null,
-      "status": "pending",
+      "generation": {
+        "ok": true,
+        "artifacts": [],
+        "meta": {
+          "request_id": "v2b18y79iw8i",
+          "project": "mh370_demo",
+          "target_name": "L1",
+          "status": "Submitted",
+          "output_path": "project/mh370_demo/L1.mp4",
+          "db_path": "/Users/np_123/code/videogen/db/video_download.csv"
+        },
+        "error": null,
+        "timestamp": "2025-10-16T01:46:36Z"
+      },
+      "audioGeneration": {
+        "ok": true,
+        "artifacts": [
+          "project/mh370_demo/subtitles/L1.srt",
+          "project/mh370_demo/audio/L1_001.wav",
+          "project/mh370_demo/audio/L1_002.wav",
+          "project/mh370_demo/audio/L1_003.wav",
+          "project/mh370_demo/audio/L1_004.wav",
+          "project/mh370_demo/audio/L1_005.wav",
+          "project/mh370_demo/audio/L1.wav"
+        ],
+        "meta": {
+          "project": "mh370_demo",
+          "target_name": "L1",
+          "total_duration": 11260,
+          "clips": [
+            "audio/L1_001.wav",
+            "audio/L1_002.wav",
+            "audio/L1_003.wav",
+            "audio/L1_004.wav",
+            "audio/L1_005.wav"
+          ],
+          "srt": "subtitles/L1.srt",
+          "merged": "audio/L1.wav",
+          "tts_url": "http://10.0.0.159:9880/tts"
+        },
+        "error": null,
+        "timestamp": "2025-10-16T01:46:33Z"
+      },
+      "status": "done",
       "retries": 0
     },
     {
@@ -27,8 +69,48 @@
         "confidence": 1.0,
         "decided_by": "llm"
       },
-      "generation": null,
-      "status": "pending",
+      "generation": {
+        "ok": true,
+        "artifacts": [
+          "project/mh370_demo/L2.html",
+          "project/mh370_demo/L2.mp4"
+        ],
+        "meta": {
+          "mode": "jsx-prompt",
+          "width": 1280,
+          "height": 720,
+          "durationSec": 3.78,
+          "durationMs": 3780,
+          "html": "project/mh370_demo/L2.html",
+          "video": "project/mh370_demo/L2.mp4",
+          "attempts": 1,
+          "syntax_tool": "esbuild"
+        },
+        "error": null,
+        "timestamp": "2025-10-16T01:47:02Z"
+      },
+      "audioGeneration": {
+        "ok": true,
+        "artifacts": [
+          "project/mh370_demo/subtitles/L2.srt",
+          "project/mh370_demo/audio/L2_001.wav",
+          "project/mh370_demo/audio/L2.wav"
+        ],
+        "meta": {
+          "project": "mh370_demo",
+          "target_name": "L2",
+          "total_duration": 3780,
+          "clips": [
+            "audio/L2_001.wav"
+          ],
+          "srt": "subtitles/L2.srt",
+          "merged": "audio/L2.wav",
+          "tts_url": "http://10.0.0.159:9880/tts"
+        },
+        "error": null,
+        "timestamp": "2025-10-16T01:46:37Z"
+      },
+      "status": "done",
       "retries": 0
     },
     {
@@ -41,8 +123,50 @@
         "confidence": 1.0,
         "decided_by": "llm"
       },
-      "generation": null,
-      "status": "pending",
+      "generation": {
+        "ok": true,
+        "artifacts": [
+          "project/mh370_demo/L3.html",
+          "project/mh370_demo/L3.mp4"
+        ],
+        "meta": {
+          "mode": "jsx-prompt",
+          "width": 1280,
+          "height": 720,
+          "durationSec": 5.52,
+          "durationMs": 5520,
+          "html": "project/mh370_demo/L3.html",
+          "video": "project/mh370_demo/L3.mp4",
+          "attempts": 1,
+          "syntax_tool": "esbuild"
+        },
+        "error": null,
+        "timestamp": "2025-10-16T01:47:44Z"
+      },
+      "audioGeneration": {
+        "ok": true,
+        "artifacts": [
+          "project/mh370_demo/subtitles/L3.srt",
+          "project/mh370_demo/audio/L3_001.wav",
+          "project/mh370_demo/audio/L3_002.wav",
+          "project/mh370_demo/audio/L3.wav"
+        ],
+        "meta": {
+          "project": "mh370_demo",
+          "target_name": "L3",
+          "total_duration": 5520,
+          "clips": [
+            "audio/L3_001.wav",
+            "audio/L3_002.wav"
+          ],
+          "srt": "subtitles/L3.srt",
+          "merged": "audio/L3.wav",
+          "tts_url": "http://10.0.0.159:9880/tts"
+        },
+        "error": null,
+        "timestamp": "2025-10-16T01:47:05Z"
+      },
+      "status": "done",
       "retries": 0
     },
     {
@@ -55,8 +179,52 @@
         "confidence": 1.0,
         "decided_by": "llm"
       },
-      "generation": null,
-      "status": "pending",
+      "generation": {
+        "ok": true,
+        "artifacts": [
+          "project/mh370_demo/L4.html",
+          "project/mh370_demo/L4.mp4"
+        ],
+        "meta": {
+          "mode": "jsx-prompt",
+          "width": 1280,
+          "height": 720,
+          "durationSec": 11.7,
+          "durationMs": 11700,
+          "html": "project/mh370_demo/L4.html",
+          "video": "project/mh370_demo/L4.mp4",
+          "attempts": 1,
+          "syntax_tool": "esbuild"
+        },
+        "error": null,
+        "timestamp": "2025-10-16T01:48:24Z"
+      },
+      "audioGeneration": {
+        "ok": true,
+        "artifacts": [
+          "project/mh370_demo/subtitles/L4.srt",
+          "project/mh370_demo/audio/L4_001.wav",
+          "project/mh370_demo/audio/L4_002.wav",
+          "project/mh370_demo/audio/L4_003.wav",
+          "project/mh370_demo/audio/L4.wav"
+        ],
+        "meta": {
+          "project": "mh370_demo",
+          "target_name": "L4",
+          "total_duration": 11700,
+          "clips": [
+            "audio/L4_001.wav",
+            "audio/L4_002.wav",
+            "audio/L4_003.wav"
+          ],
+          "srt": "subtitles/L4.srt",
+          "merged": "audio/L4.wav",
+          "tts_url": "http://10.0.0.159:9880/tts"
+        },
+        "error": null,
+        "timestamp": "2025-10-16T01:47:49Z"
+      },
+      "status": "done",
       "retries": 0
     },
     {
@@ -69,8 +237,54 @@
         "confidence": 1.0,
         "decided_by": "llm"
       },
-      "generation": null,
-      "status": "pending",
+      "generation": {
+        "ok": true,
+        "artifacts": [
+          "project/mh370_demo/L5.html",
+          "project/mh370_demo/L5.mp4"
+        ],
+        "meta": {
+          "mode": "jsx-prompt",
+          "width": 1280,
+          "height": 720,
+          "durationSec": 7.12,
+          "durationMs": 7120,
+          "html": "project/mh370_demo/L5.html",
+          "video": "project/mh370_demo/L5.mp4",
+          "attempts": 1,
+          "syntax_tool": "esbuild"
+        },
+        "error": null,
+        "timestamp": "2025-10-16T01:48:55Z"
+      },
+      "audioGeneration": {
+        "ok": true,
+        "artifacts": [
+          "project/mh370_demo/subtitles/L5.srt",
+          "project/mh370_demo/audio/L5_001.wav",
+          "project/mh370_demo/audio/L5_002.wav",
+          "project/mh370_demo/audio/L5_003.wav",
+          "project/mh370_demo/audio/L5_004.wav",
+          "project/mh370_demo/audio/L5.wav"
+        ],
+        "meta": {
+          "project": "mh370_demo",
+          "target_name": "L5",
+          "total_duration": 7120,
+          "clips": [
+            "audio/L5_001.wav",
+            "audio/L5_002.wav",
+            "audio/L5_003.wav",
+            "audio/L5_004.wav"
+          ],
+          "srt": "subtitles/L5.srt",
+          "merged": "audio/L5.wav",
+          "tts_url": "http://10.0.0.159:9880/tts"
+        },
+        "error": null,
+        "timestamp": "2025-10-16T01:48:28Z"
+      },
+      "status": "done",
       "retries": 0
     },
     {
@@ -83,8 +297,52 @@
         "confidence": 1.0,
         "decided_by": "llm"
       },
-      "generation": null,
-      "status": "pending",
+      "generation": {
+        "ok": true,
+        "artifacts": [
+          "project/mh370_demo/L6.html",
+          "project/mh370_demo/L6.mp4"
+        ],
+        "meta": {
+          "mode": "jsx-prompt",
+          "width": 1280,
+          "height": 720,
+          "durationSec": 6.82,
+          "durationMs": 6820,
+          "html": "project/mh370_demo/L6.html",
+          "video": "project/mh370_demo/L6.mp4",
+          "attempts": 1,
+          "syntax_tool": "esbuild"
+        },
+        "error": null,
+        "timestamp": "2025-10-16T01:49:25Z"
+      },
+      "audioGeneration": {
+        "ok": true,
+        "artifacts": [
+          "project/mh370_demo/subtitles/L6.srt",
+          "project/mh370_demo/audio/L6_001.wav",
+          "project/mh370_demo/audio/L6_002.wav",
+          "project/mh370_demo/audio/L6_003.wav",
+          "project/mh370_demo/audio/L6.wav"
+        ],
+        "meta": {
+          "project": "mh370_demo",
+          "target_name": "L6",
+          "total_duration": 6820,
+          "clips": [
+            "audio/L6_001.wav",
+            "audio/L6_002.wav",
+            "audio/L6_003.wav"
+          ],
+          "srt": "subtitles/L6.srt",
+          "merged": "audio/L6.wav",
+          "tts_url": "http://10.0.0.159:9880/tts"
+        },
+        "error": null,
+        "timestamp": "2025-10-16T01:48:59Z"
+      },
+      "status": "done",
       "retries": 0
     },
     {
@@ -97,8 +355,44 @@
         "confidence": 1.0,
         "decided_by": "llm"
       },
-      "generation": null,
-      "status": "pending",
+      "generation": {
+        "ok": true,
+        "artifacts": [],
+        "meta": {
+          "request_id": "y36frz4dkkzp",
+          "project": "mh370_demo",
+          "target_name": "L7",
+          "status": "Submitted",
+          "output_path": "project/mh370_demo/L7.mp4",
+          "db_path": "/Users/np_123/code/videogen/db/video_download.csv"
+        },
+        "error": null,
+        "timestamp": "2025-10-16T01:49:29Z"
+      },
+      "audioGeneration": {
+        "ok": true,
+        "artifacts": [
+          "project/mh370_demo/subtitles/L7.srt",
+          "project/mh370_demo/audio/L7_001.wav",
+          "project/mh370_demo/audio/L7_002.wav",
+          "project/mh370_demo/audio/L7.wav"
+        ],
+        "meta": {
+          "project": "mh370_demo",
+          "target_name": "L7",
+          "total_duration": 4760,
+          "clips": [
+            "audio/L7_001.wav",
+            "audio/L7_002.wav"
+          ],
+          "srt": "subtitles/L7.srt",
+          "merged": "audio/L7.wav",
+          "tts_url": "http://10.0.0.159:9880/tts"
+        },
+        "error": null,
+        "timestamp": "2025-10-16T01:49:27Z"
+      },
+      "status": "done",
       "retries": 0
     },
     {
@@ -111,8 +405,48 @@
         "confidence": 1.0,
         "decided_by": "llm"
       },
-      "generation": null,
-      "status": "pending",
+      "generation": {
+        "ok": true,
+        "artifacts": [],
+        "meta": {
+          "request_id": "vloagkq7fne1",
+          "project": "mh370_demo",
+          "target_name": "L8",
+          "status": "Submitted",
+          "output_path": "project/mh370_demo/L8.mp4",
+          "db_path": "/Users/np_123/code/videogen/db/video_download.csv"
+        },
+        "error": null,
+        "timestamp": "2025-10-16T01:49:35Z"
+      },
+      "audioGeneration": {
+        "ok": true,
+        "artifacts": [
+          "project/mh370_demo/subtitles/L8.srt",
+          "project/mh370_demo/audio/L8_001.wav",
+          "project/mh370_demo/audio/L8_002.wav",
+          "project/mh370_demo/audio/L8_003.wav",
+          "project/mh370_demo/audio/L8_004.wav",
+          "project/mh370_demo/audio/L8.wav"
+        ],
+        "meta": {
+          "project": "mh370_demo",
+          "target_name": "L8",
+          "total_duration": 8640,
+          "clips": [
+            "audio/L8_001.wav",
+            "audio/L8_002.wav",
+            "audio/L8_003.wav",
+            "audio/L8_004.wav"
+          ],
+          "srt": "subtitles/L8.srt",
+          "merged": "audio/L8.wav",
+          "tts_url": "http://10.0.0.159:9880/tts"
+        },
+        "error": null,
+        "timestamp": "2025-10-16T01:49:34Z"
+      },
+      "status": "done",
       "retries": 0
     },
     {
@@ -125,8 +459,52 @@
         "confidence": 1.0,
         "decided_by": "llm"
       },
-      "generation": null,
-      "status": "pending",
+      "generation": {
+        "ok": true,
+        "artifacts": [],
+        "meta": {
+          "request_id": "awqdvquo272y",
+          "project": "mh370_demo",
+          "target_name": "L9",
+          "status": "Submitted",
+          "output_path": "project/mh370_demo/L9.mp4",
+          "db_path": "/Users/np_123/code/videogen/db/video_download.csv"
+        },
+        "error": null,
+        "timestamp": "2025-10-16T01:49:44Z"
+      },
+      "audioGeneration": {
+        "ok": true,
+        "artifacts": [
+          "project/mh370_demo/subtitles/L9.srt",
+          "project/mh370_demo/audio/L9_001.wav",
+          "project/mh370_demo/audio/L9_002.wav",
+          "project/mh370_demo/audio/L9_003.wav",
+          "project/mh370_demo/audio/L9_004.wav",
+          "project/mh370_demo/audio/L9_005.wav",
+          "project/mh370_demo/audio/L9_006.wav",
+          "project/mh370_demo/audio/L9.wav"
+        ],
+        "meta": {
+          "project": "mh370_demo",
+          "target_name": "L9",
+          "total_duration": 13200,
+          "clips": [
+            "audio/L9_001.wav",
+            "audio/L9_002.wav",
+            "audio/L9_003.wav",
+            "audio/L9_004.wav",
+            "audio/L9_005.wav",
+            "audio/L9_006.wav"
+          ],
+          "srt": "subtitles/L9.srt",
+          "merged": "audio/L9.wav",
+          "tts_url": "http://10.0.0.159:9880/tts"
+        },
+        "error": null,
+        "timestamp": "2025-10-16T01:49:42Z"
+      },
+      "status": "done",
       "retries": 0
     },
     {
@@ -139,9 +517,54 @@
         "confidence": 1.0,
         "decided_by": "llm"
       },
-      "generation": null,
-      "status": "pending",
+      "generation": {
+        "ok": true,
+        "artifacts": [],
+        "meta": {
+          "request_id": "q8r1rz8wbfvn",
+          "project": "mh370_demo",
+          "target_name": "L10",
+          "status": "Submitted",
+          "output_path": "project/mh370_demo/L10.mp4",
+          "db_path": "/Users/np_123/code/videogen/db/video_download.csv"
+        },
+        "error": null,
+        "timestamp": "2025-10-16T01:49:51Z"
+      },
+      "audioGeneration": {
+        "ok": true,
+        "artifacts": [
+          "project/mh370_demo/subtitles/L10.srt",
+          "project/mh370_demo/audio/L10_001.wav",
+          "project/mh370_demo/audio/L10_002.wav",
+          "project/mh370_demo/audio/L10_003.wav",
+          "project/mh370_demo/audio/L10_004.wav",
+          "project/mh370_demo/audio/L10_005.wav",
+          "project/mh370_demo/audio/L10.wav"
+        ],
+        "meta": {
+          "project": "mh370_demo",
+          "target_name": "L10",
+          "total_duration": 10660,
+          "clips": [
+            "audio/L10_001.wav",
+            "audio/L10_002.wav",
+            "audio/L10_003.wav",
+            "audio/L10_004.wav",
+            "audio/L10_005.wav"
+          ],
+          "srt": "subtitles/L10.srt",
+          "merged": "audio/L10.wav",
+          "tts_url": "http://10.0.0.159:9880/tts"
+        },
+        "error": null,
+        "timestamp": "2025-10-16T01:49:50Z"
+      },
+      "status": "done",
       "retries": 0
     }
-  ]
+  ],
+  "final_audio": "project/mh370_demo/mh370_demo_final.wav",
+  "final_video": "project/mh370_demo/mh370_demo_final.mp4",
+  "final_muxed": "project/mh370_demo/mh370_demo_final_muxed.mp4"
 }

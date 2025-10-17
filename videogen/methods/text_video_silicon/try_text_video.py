@@ -34,7 +34,8 @@ def main() -> None:
         project=project,
         target_name=target_name,
         text=text,
-        workdir=workdir
+        workdir=workdir,
+        duration_ms = 10000,
     )
 
     print("\n=== RESULT ===")

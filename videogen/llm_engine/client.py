@@ -47,26 +47,21 @@ class LLMEngine:
             temperature: float = 0.2,
             max_tokens: int = 1200,
     ) -> str:
-        """
-        生成 React 18 单场景组件源码（JSX），末尾要有 window.__SCENE__ = Scene
-        """
         system = (
-            "You are a strict code generator that outputs ONLY pure React 18 JSX code.\n"
+            "You are a creative React animation director who converts cinematic scene descriptions "
+            "into high-quality React 18 JSX. You understand visual design, SVG, animation timing, and storytelling.\n"
+            "Then you output ONLY the final JSX code (no explanations, no Markdown).\n"
             "Rules:\n"
-            "1) Output must be ONLY code — no explanations, no Markdown, no backticks.\n"
-            "2) Define exactly one component named `Scene` (function or const).\n"
-            "3) End with `window.__SCENE__ = Scene;`.\n"
-            "4) No imports, exports, or external libraries.\n"
-            "5) Do not call ReactDOM.render or createRoot.\n"
-            f"6) Scene should fill {width}x{height} container using inline styles.\n"
-            "7) You may use React hooks and requestAnimationFrame.\n"
+            "1. Define exactly one component named `Scene`.\n"
+            "2. End with `window.__SCENE__ = Scene;`\n"
+            "3. Use inline styles, React hooks, and animation techniques (CSS keyframes, SVG, or canvas).\n"
+            "4. Assume 1280x720 container.\n"
+            "5. Avoid external libs; pure JSX and browser APIs only.\n"
         )
-
         user = (
-            "Write a single self-contained React JSX scene following all rules above.\n"
-            "Requirements:\n"
-            f"{react_prompt}\n"
-            "Remember: Output must contain only valid JSX code and end with `window.__SCENE__ = Scene;`."
+            f"Scene concept:\n{react_prompt}\n\n"
+            "Step 1: Internally imagine how to animate this scene like a motion designer.\n"
+            "Step 2: Output the JSX implementation directly."
         )
 
         res = self.chat(

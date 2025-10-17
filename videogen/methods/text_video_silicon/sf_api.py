@@ -21,7 +21,8 @@ def submit_video(prompt: str) -> Optional[str]:
         )
         r.raise_for_status()
         return r.json().get("requestId")
-    except Exception:
+    except Exception as e:
+        print(f'submit video failed {e}')
         return None
 
 def check_status(request_id: str) -> Dict[str, Any]:

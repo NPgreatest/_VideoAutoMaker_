@@ -11,7 +11,7 @@ class BaseMethod(abc.ABC):
         super().__init__()
 
     @abc.abstractmethod
-    def run(self, *, prompt: str, project: str, target_name: str, text: str, workdir: Path, duration_ms: int | None = None) -> Dict[str, Any]:
+    def run(self, *, prompt: str, project: str, target_name: str, text: str, workdir: Path, duration_ms: int | None = None, block) -> Dict[str, Any]:
         """Execute the method and return a dict:
         {{
           "ok": bool,
