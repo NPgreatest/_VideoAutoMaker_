@@ -56,6 +56,7 @@ class OpenAICompatProvider:
                 content = data["choices"][0]["message"]["content"]
                 return {"content": content, "raw": data}
             except Exception as e:
+                print(f'chat failed due to {e}')
                 if attempt >= LLM_MAX_RETRIES:
                     raise
                 time.sleep(backoff)

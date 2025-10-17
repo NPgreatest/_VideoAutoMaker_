@@ -38,38 +38,6 @@ class LLMEngine:
         text = self.ask_text(prompt, **kw).lower()
         return next((k for k in positive_keywords if k in text), fallback)
 
-    def gen_react_jsx(
-            self,
-            react_prompt: str,
-            *,
-            width: int = 1280,
-            height: int = 720,
-            temperature: float = 0.2,
-            max_tokens: int = 1200,
-    ) -> str:
-        system = (
-            "You are a creative React animation director who converts cinematic scene descriptions "
-            "into high-quality React 18 JSX. You understand visual design, SVG, animation timing, and storytelling.\n"
-            "Then you output ONLY the final JSX code (no explanations, no Markdown).\n"
-            "Rules:\n"
-            "1. Define exactly one component named `Scene`.\n"
-            "2. End with `window.__SCENE__ = Scene;`\n"
-            "3. Use inline styles, React hooks, and animation techniques (CSS keyframes, SVG, or canvas).\n"
-            "4. Assume 1280x720 container.\n"
-            "5. Avoid external libs; pure JSX and browser APIs only.\n"
-        )
-        user = (
-            f"Scene concept:\n{react_prompt}\n\n"
-            "Step 1: Internally imagine how to animate this scene like a motion designer.\n"
-            "Step 2: Output the JSX implementation directly."
-        )
-
-        res = self.chat(
-            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
-        return res["content"].strip()
 
 
 # -------- 全局单例（简单好用） --------

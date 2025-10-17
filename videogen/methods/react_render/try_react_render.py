@@ -4,7 +4,6 @@ import argparse
 from pathlib import Path
 from typing import List, Dict, Any
 
-import method as rr_mod  # 确保 module 可导入
 from method import ReactRenderMethod
 
 

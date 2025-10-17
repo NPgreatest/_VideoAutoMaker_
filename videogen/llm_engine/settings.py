@@ -12,6 +12,6 @@ LLM_API_KEY = os.getenv("LLM_API_TOKEN") or os.getenv("SILICONFLOW_API_TOKEN")
 LLM_DEFAULT_MODEL = os.getenv("LLM_DEFAULT_MODEL", "deepseek-ai/DeepSeek-V3")
 
 # 请求超时/重试
-LLM_TIMEOUT_SECONDS = int(os.getenv("LLM_TIMEOUT_SECONDS", "60"))
+LLM_TIMEOUT_SECONDS = int(os.getenv("LLM_TIMEOUT_SECONDS", "120"))
 LLM_MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", "3"))
 LLM_BACKOFF_BASE = float(os.getenv("LLM_BACKOFF_BASE", "0.6"))
