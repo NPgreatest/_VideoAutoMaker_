@@ -52,6 +52,20 @@ def validate_html(engine: Any, html_text: str) -> bool:
         print(f"[Validator] Validation error: {e}")
         return False
 
+def get_video_duration(video_path: Path) -> float:
+    """用 ffprobe 精确获取视频时长（秒）"""
+    result = subprocess.run(
+        [
+            "ffprobe", "-v", "error",
+            "-show_entries", "format=duration",
+            "-of", "json", str(video_path)
+        ],
+        capture_output=True, text=True
+    )
+    data = json.loads(result.stdout)
+    return float(data["format"]["duration"])
+
+
 def _build_index_html(title: str, width: int, height: int, html_code: str, duration_sec: float) -> str:
     """注入模板生成完整 HTML"""
     template = TEMPLATE_HTML.read_text(encoding="utf-8")
@@ -99,15 +113,19 @@ def _serve_dir(root_dir: Path):
             httpd.shutdown(); httpd.server_close(); t.join()
 
 
-def _record_url(page_url: str, out_video: Path, width: int, height: int, duration_ms: int, lead_in_trim_ms: int = 800) -> Path:
-    """Record the rendered HTML page as video"""
-    if not _PLAYWRIGHT_OK:
-        raise RuntimeError("playwright 未安装：pip install playwright && playwright install chromium")
-
+def _record_url(
+    page_url: str,
+    out_video: Path,
+    width: int,
+    height: int,
+    duration_ms: int,
+    extra_record_ms: int = 1000,  # ⏱ 多录制1秒以防提前结束
+) -> Path:
+    """
+    录制网页动画为视频，自动检测真实长度并精确裁剪到目标时长。
+    """
     out_video.parent.mkdir(parents=True, exist_ok=True)
     tmp_webm = out_video.with_suffix(".webm")
-
-    trim_sec = max(0, lead_in_trim_ms / 1000.0)
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -115,37 +133,67 @@ def _record_url(page_url: str, out_video: Path, width: int, height: int, duratio
             viewport={"width": width, "height": height},
             record_video_dir=str(out_video.parent),
             record_video_size={"width": width, "height": height},
-            device_scale_factor=2
+            device_scale_factor=3,
         )
         page = context.new_page()
         page.goto(page_url, wait_until="networkidle")
-        try:
-            page.wait_for_function("() => window.__PLAY_DONE === true", timeout=duration_ms + 8000)
-        except Exception:
-            page.wait_for_timeout(duration_ms + 800)
-        tmp_path = Path(page.video.path())
-        context.close(); browser.close()
 
+        total_wait_ms = duration_ms + extra_record_ms
+        try:
+            # ✅ 尝试等待 React 动画主动标记完成
+            page.wait_for_function(
+                "() => window.__PLAY_DONE === true",
+                timeout=total_wait_ms + 4000,
+            )
+        except Exception:
+            # 否则 fallback 等待固定时长
+            page.wait_for_timeout(total_wait_ms)
+
+        tmp_path = Path(page.video.path())
+        context.close()
+        browser.close()
+
+    # 将 Playwright 的录屏文件改名
     tmp_path.replace(tmp_webm)
 
-    if _which("ffmpeg") and out_video.suffix.lower() == ".mp4":
-        cmd = [
-            "ffmpeg", "-y",
-            "-i", str(tmp_webm),
-            "-ss", f"{trim_sec:.3f}",
-            "-vf", f"scale={width}:{height}:flags=lanczos",
-            "-r", "60",
-            "-c:v", "libx264",
-            "-preset", "slow",
-            "-crf", "16",
-            "-pix_fmt", "yuv420p",
-            str(out_video)
-        ]
-        subprocess.run(cmd, check=True)
-        try: tmp_webm.unlink(missing_ok=True)
-        except Exception: pass
-        return out_video
-    return tmp_webm
+    # 计算实际录制时长
+    real_duration = get_video_duration(tmp_webm)
+    target_sec = duration_ms / 1000.0
+
+    # 动态补偿逻辑
+    # 如果录制比目标短，就直接保留
+    # 如果录制比目标长，裁剪末尾保证输出精准
+    if real_duration < target_sec:
+        print(f"[WARN] 实际录制 {real_duration:.2f}s < 目标 {target_sec:.2f}s，保留原视频。")
+        return tmp_webm
+
+    # 需要截断的时长（尾部）
+    cut_duration = min(real_duration, target_sec)
+    tmp_trimmed = out_video.with_suffix(".mp4")
+
+    # 精准转码 + 时长截断
+    cmd = [
+        "ffmpeg", "-y",
+        "-i", str(tmp_webm),
+        "-ss", "0",
+        "-t", f"{cut_duration:.3f}",  # ⏱ 精准裁剪输出
+        "-vf", f"scale={width}:{height}:flags=lanczos",
+        "-r", "60",
+        "-c:v", "libx264",
+        "-preset", "slow",
+        "-crf", "16",
+        "-pix_fmt", "yuv420p",
+        str(tmp_trimmed),
+    ]
+    subprocess.run(cmd, check=True)
+
+    try:
+        tmp_webm.unlink(missing_ok=True)
+    except Exception:
+        pass
+
+    print(f"[OK] 精准输出: {cut_duration:.3f}s")
+    return tmp_trimmed
 
 
 @register_method
@@ -154,12 +202,12 @@ class ReactRenderMethod(BaseMethod):
     Prompt → HTML+React → index.html + 录制视频
     Adds: LLM validation + retry
     """
-    NAME = "react_html"
+    NAME = "react_animation"
     OUTPUT_KIND = "video"
 
-    DEFAULT_W = 1280
-    DEFAULT_H = 720
-    DEFAULT_SEC = 6.0
+    DEFAULT_W = 1920
+    DEFAULT_H = 1080
+    DEFAULT_SEC = 10.0
 
     def run(
         self,
@@ -170,6 +218,7 @@ class ReactRenderMethod(BaseMethod):
         text: str,
         workdir: Path,
         duration_ms: int | None = None,
+        block: Any | None = None,
     ) -> Dict[str, Any]:
         if not text.strip():
             return {"ok": False, "error": "text 不能为空"}
@@ -257,8 +306,35 @@ class ReactRenderMethod(BaseMethod):
                 "height": height,
                 "durationSec": duration_sec,
                 "html": str(out_html),
-                "video": str(final_path),
+                "output_path": str(final_path),
                 "attempts": attempt,
             },
             "error": None,
         }
+
+    def generate_prompt(self, text: str) -> str:
+        engine = get_engine()
+
+        system_prompt = (
+            "You are a professional motion designer creating educational or explanatory scenes in React.\n"
+            "You visualize structured or numerical information (counts, lists, flight paths, timelines, etc.).\n"
+            "Your goal is to describe a clean, elegant, data-driven animation scene.\n"
+            "The result will later be converted into React code, so focus on clear visual layout and composition.\n"
+            "Avoid cinematic storytelling or people; instead, focus on charts, maps, or UI-like animations.\n"
+        )
+        user_prompt = (
+            f"Line: {text}\n\n"
+            "Describe what kind of React animation should visualize this information. "
+            "Mention elements (icons, text labels, bars, flight paths, charts) and how they animate. "
+            "Avoid writing code, only describe the intended look and movement."
+        )
+
+        res = engine.chat(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=0.4,
+            max_tokens=300,
+        )
+        return res["content"].strip()

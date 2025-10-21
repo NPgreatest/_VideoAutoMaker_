@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+
+import os.path
 from pathlib import Path
 from datetime import datetime, timezone
 from videogen.methods import react_render, text_video_silicon, subtitle_only
@@ -23,9 +25,9 @@ def run_pipeline(input_path: Path, workdir: Path,genDecision = False, genAudio =
     for block in blocks:
         print(f"\n🎞️  Processing {block.id} | status={block.status}")
 
-        # if block.status == "done" and not block.status == "regenerate":
-        #     print("→ Skipped (already done).")
-        #     continue
+        if block.status == "done" and (block.generation and 'output_path' in block.generation.meta and os.path.exists(block.generation.meta['output_path'])):
+            print("→ Skipped (already done).")
+            continue
 
         # --- 决策阶段 ---
         if genDecision and (not block.decision or block.status == "regenerate"):
@@ -110,4 +112,4 @@ def run_pipeline(input_path: Path, workdir: Path,genDecision = False, genAudio =
 
 
 if __name__ == "__main__":
-    run_pipeline(Path("./project/mh370_demo/mh370_demo.json"), Path("."), True,False,True , True    )
+    run_pipeline(Path("./project/mh370_demo/mh370_demo.json"), Path("."), True,False,True , True  )
