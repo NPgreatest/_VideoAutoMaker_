@@ -4,6 +4,9 @@ from __future__ import annotations
 import os.path
 from pathlib import Path
 from datetime import datetime, timezone
+
+from dotenv import load_dotenv
+
 from videogen.methods import react_render, text_video_silicon, subtitle_only
 from videogen.methods.audio_engine.utils import get_total_audio_duration_ms
 from videogen.pipeline.schema import ProjectJSON, ScriptBlock, Decision, GenerationResult
@@ -12,6 +15,9 @@ from videogen.methods.registry import create_method
 from videogen.llm_engine import get_engine
 from videogen.router.decider import decide_generation_method  # 你会写的模块
 from dacite import from_dict
+
+load_dotenv()
+PROJECT_NAME = os.getenv("PROJECT_NAME")
 
 
 def run_pipeline(input_path: Path, workdir: Path,genDecision = False, genAudio = False, genPrompt = False, genMedia = False) -> None:
@@ -112,4 +118,4 @@ def run_pipeline(input_path: Path, workdir: Path,genDecision = False, genAudio =
 
 
 if __name__ == "__main__":
-    run_pipeline(Path("./project/mh370_demo/mh370_demo.json"), Path("."), True,False,True , True  )
+    run_pipeline(Path(f"./project/{PROJECT_NAME}/{PROJECT_NAME}.json"), Path("."), False,False,False , True  )

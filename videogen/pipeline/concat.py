@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+
+import os
 import subprocess, shlex
 from pathlib import Path
 from typing import List
 from dacite import from_dict
+from dotenv import load_dotenv
 
 from videogen.pipeline.schema import ScriptBlock
 from videogen.pipeline.utils import read_json, write_json
@@ -173,8 +176,12 @@ def concat_project_media(json_path: Path, workdir: Path) -> None:
     print(f"   → Audio: {final_audio.exists()} | Video: {final_video.exists()} | Muxed: {final_muxed.exists()}")
 
 
+
+load_dotenv()
+PROJECT_NAME = os.getenv("PROJECT_NAME")
+
 if __name__ == "__main__":
     concat_project_media(
-        Path("./project/mh370_demo/mh370_demo.json"),
+        Path(f"./project/{PROJECT_NAME}/{PROJECT_NAME}.json"),
         Path(".")
     )

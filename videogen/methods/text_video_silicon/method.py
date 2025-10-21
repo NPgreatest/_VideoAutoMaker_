@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import os.path
 import time
 from pathlib import Path
 from typing import Dict, Any, Optional
@@ -49,7 +51,7 @@ class TextVideoSilicon(BaseMethod):
             return {"ok": False, "artifacts": [], "meta": {}, "error": "Missing SILICONFLOW_API_TOKEN."}
 
         # 提交任务
-        if block and block.generation and block.generation.ok and 'request_id' in block.generation.meta:
+        if block and block.generation and block.generation.ok and 'request_id' in block.generation.meta and os.path.exists(block.generation.meta['output_path']):
             request_id = block.generation.meta['request_id']
         else:
             request_id = submit_video(prompt)

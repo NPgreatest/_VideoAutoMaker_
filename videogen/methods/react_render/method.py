@@ -112,21 +112,22 @@ def _serve_dir(root_dir: Path):
         finally:
             httpd.shutdown(); httpd.server_close(); t.join()
 
-
 def _record_url(
     page_url: str,
     out_video: Path,
     width: int,
     height: int,
     duration_ms: int,
-    extra_record_ms: int = 1000,  # ⏱ 多录制1秒以防提前结束
+    fps: int = 60,
+    extra_record_ms: int = 1000,
 ) -> Path:
     """
-    录制网页动画为视频，自动检测真实长度并精确裁剪到目标时长。
+    精确帧控制：输出 mp4 时长严格等于 duration_ms（误差 < 1帧）。
     """
     out_video.parent.mkdir(parents=True, exist_ok=True)
     tmp_webm = out_video.with_suffix(".webm")
 
+    # === Step 1. 录制 ===
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(
@@ -140,60 +141,40 @@ def _record_url(
 
         total_wait_ms = duration_ms + extra_record_ms
         try:
-            # ✅ 尝试等待 React 动画主动标记完成
-            page.wait_for_function(
-                "() => window.__PLAY_DONE === true",
-                timeout=total_wait_ms + 4000,
-            )
+            page.wait_for_function("() => window.__PLAY_DONE === true", timeout=total_wait_ms + 4000)
         except Exception:
-            # 否则 fallback 等待固定时长
             page.wait_for_timeout(total_wait_ms)
 
         tmp_path = Path(page.video.path())
         context.close()
         browser.close()
 
-    # 将 Playwright 的录屏文件改名
     tmp_path.replace(tmp_webm)
 
-    # 计算实际录制时长
-    real_duration = get_video_duration(tmp_webm)
+    # === Step 2. 帧数精确转码 ===
     target_sec = duration_ms / 1000.0
+    frame_count = int(round(target_sec * fps))
+    tmp_fixed = out_video.with_suffix(".mp4")
 
-    # 动态补偿逻辑
-    # 如果录制比目标短，就直接保留
-    # 如果录制比目标长，裁剪末尾保证输出精准
-    if real_duration < target_sec:
-        print(f"[WARN] 实际录制 {real_duration:.2f}s < 目标 {target_sec:.2f}s，保留原视频。")
-        return tmp_webm
-
-    # 需要截断的时长（尾部）
-    cut_duration = min(real_duration, target_sec)
-    tmp_trimmed = out_video.with_suffix(".mp4")
-
-    # 精准转码 + 时长截断
     cmd = [
         "ffmpeg", "-y",
         "-i", str(tmp_webm),
-        "-ss", "0",
-        "-t", f"{cut_duration:.3f}",  # ⏱ 精准裁剪输出
-        "-vf", f"scale={width}:{height}:flags=lanczos",
-        "-r", "60",
+        "-vf", f"scale={width}:{height}:flags=lanczos,fps={fps}",
+        "-frames:v", str(frame_count),       # ✅ 输出精确帧数
         "-c:v", "libx264",
         "-preset", "slow",
-        "-crf", "16",
+        "-crf", "14",
         "-pix_fmt", "yuv420p",
-        str(tmp_trimmed),
+        "-an",                                # 无音轨避免时间线漂移
+        str(tmp_fixed),
     ]
     subprocess.run(cmd, check=True)
 
-    try:
-        tmp_webm.unlink(missing_ok=True)
-    except Exception:
-        pass
+    tmp_webm.unlink(missing_ok=True)
 
-    print(f"[OK] 精准输出: {cut_duration:.3f}s")
-    return tmp_trimmed
+    real_duration = get_video_duration(tmp_fixed)
+    print(f"[OK] 输出文件长度: {real_duration:.3f}s  (目标 {target_sec:.3f}s, 帧数 {frame_count})")
+    return tmp_fixed
 
 
 @register_method
