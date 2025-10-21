@@ -26,7 +26,6 @@ def run_pipeline(input_path: Path, workdir: Path,genDecision = False, genAudio =
 
     project = raw.get("project", "demo_project")
     blocks = [from_dict(ScriptBlock, b) for b in raw.get("script", [])]
-    engine = get_engine()
 
     for block in blocks:
         print(f"\n🎞️  Processing {block.id} | status={block.status}")
@@ -118,4 +117,4 @@ def run_pipeline(input_path: Path, workdir: Path,genDecision = False, genAudio =
 
 
 if __name__ == "__main__":
-    run_pipeline(Path(f"./project/{PROJECT_NAME}/{PROJECT_NAME}.json"), Path("."), False,False,False , True  )
+    run_pipeline(Path(f"./project/{PROJECT_NAME}/{PROJECT_NAME}.json"), Path("."), True,False,True , True )

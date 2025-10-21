@@ -203,8 +203,7 @@ def burn_subtitles(input_video: Path, input_srt: Path, output_video: Path) -> bo
 # ==========================
 def run_combine_pipeline(project_dir: Path, output_name: str, burn_font: bool = False):
     """
-    Combine L*.srt + L*.mp4 → one merged video.
-    Keeps original subtitle logic, ensures max-quality merge.
+    Combine L*.srt + muxed.mp4 → burned subtitle video
     """
     # ---- Combine SRT ----
     subtitles_dir = project_dir / "subtitles"
@@ -217,25 +216,19 @@ def run_combine_pipeline(project_dir: Path, output_name: str, burn_font: bool = 
     print(f"[combine] Found {len(srt_files)} subtitles")
     combine_srt_files(srt_files, output_srt)
 
-    # ---- Combine Videos ----
-    videos = sorted(project_dir.glob("L*.mp4"), key=lambda p: int(re.search(r"L(\d+)", p.stem).group(1)))
-    if not videos:
-        print(f"❌ No videos found under {project_dir}")
+    # ---- Skip re-normalize & concat ----
+    muxed_video = project_dir / f"{output_name}_final_muxed.mp4"
+    if not muxed_video.exists():
+        print(f"⚠️ No muxed file found: {muxed_video}")
         return
 
-    norm_dir = project_dir / "normalized"
-    norm_dir.mkdir(exist_ok=True)
-    norm_videos = normalize_videos(videos, norm_dir)
-
-    final_muxed = project_dir / f"{output_name}_final_muxed.mp4"
-    concat_videos(norm_videos, final_muxed)
-
-    # ---- Burn Font ----
+    # ---- Burn Subtitles ----
     if burn_font:
         output_video = project_dir / f"{output_name}_with_subs.mp4"
-        burn_subtitles(final_muxed, output_srt, output_video)
+        burn_subtitles(muxed_video, output_srt, output_video)
     else:
         print(f"[combine] ✅ Subtitles merged only — no burning performed.")
+
 
 
 load_dotenv()
