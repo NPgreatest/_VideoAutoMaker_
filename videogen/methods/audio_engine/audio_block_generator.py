@@ -13,6 +13,7 @@ from pydub.utils import mediainfo
 from .utils import get_total_audio_duration_ms
 from ..base import BaseMethod
 from ..registry import register_method
+from ...pipeline.schema import ScriptBlock
 
 # ----------------- 环境 & 常量 -----------------
 load_dotenv()
@@ -86,10 +87,22 @@ def _switch_character_model(cfg: Dict[str, Any], character: str, emotion: str) -
         out.update(cfg["emotions"][emotion])  # 例如 {"speed":"1.2"} 之类
     return out
 
-def _split_text_into_clips(text: str) -> List[str]:
-    # 按中英文逗号句号问号切分，过滤空白
-    clips = re.split(r"[，。？,\.?\n]+", text)
-    return [c.strip() for c in clips if c and c.strip()]
+def _get_voice_content(block: Optional[ScriptBlock]) -> str:
+    """
+    从 block 中获取 voice 内容，如果没有 voice 则使用 text 内容。
+    返回用于 TTS 的文本内容。
+    """
+    if not block:
+        return ""
+    
+    # 优先使用 voice 字段
+    voice_content = block.voice
+    if voice_content:
+        return voice_content
+    
+    # 如果没有 voice，则使用 text 字段
+    text_content = block.text
+    return text_content
 
 def _format_time(seconds: float) -> str:
     mins, secs = divmod(seconds, 60.0)
@@ -176,7 +189,7 @@ def _tts_request(params: Dict[str, Any], out_path: Path) -> bool:
         return False
 
 def _gen_block_audio(
-    script_text: str,
+    block: Dict[str, Any],
     project_dir: Path,
     base_name: str,
     cfg: Dict[str, Any],
@@ -186,12 +199,16 @@ def _gen_block_audio(
     regen: bool = True,
 ) -> Tuple[List[Path], str, int]:
     """
-    逐段生成音频，返回：
-      - wav 分段路径列表
+    为单个 block 生成音频，返回：
+      - wav 文件路径列表（单个文件）
       - srt 文本
       - 总时长（毫秒）
     """
-    clips = _split_text_into_clips(script_text)
+    # 获取 voice 内容，如果没有则使用 text
+    voice_content = _get_voice_content(block)
+    if not voice_content:
+        return [], "", 0
+    
     audio_dir = project_dir / "audio"
     subs_dir = project_dir / "subtitles"
     audio_dir.mkdir(parents=True, exist_ok=True)
@@ -199,51 +216,42 @@ def _gen_block_audio(
 
     overrides = _switch_character_model(cfg, character, emotion)
 
-    current_time_ms = 0
-    srt_lines: List[str] = []
-    out_wavs: List[Path] = []
+    # 生成单个音频文件
+    wav_name = f"{base_name}.wav"
+    wav_path = audio_dir / wav_name
 
-    for i, clip in enumerate(clips, 1):
-        wav_name = f"{base_name}_{i:03d}.wav"
-        wav_path = audio_dir / wav_name
+    if wav_path.exists() and not regen:
+        pass
+    else:
+        params = {**DEFAULT_TTS_PARAMS, **overrides}
+        params["text"] = voice_content
+        ok = _tts_request(params, wav_path)
+        if not ok:
+            print(f"[TTS] Failed for block {base_name}, inserting 0s placeholder.")
+            wav_path.touch()
 
-        if wav_path.exists() and not regen:
-            pass
-        else:
-            params = {**DEFAULT_TTS_PARAMS, **overrides}
-            params["text"] = clip
-            ok = _tts_request(params, wav_path)
-            if not ok:
-                print(f"[TTS] Failed for clip {i}, inserting 0s placeholder.")
-                wav_path.touch()
-
-        # duration in ms
-        dur_ms = get_total_audio_duration_ms(wav_path)
-        start_ms = current_time_ms
-        end_ms = current_time_ms + dur_ms
-        current_time_ms = end_ms
-
-        out_wavs.append(wav_path)
-        srt_lines.append(
-            f"{i}\n{_format_time(start_ms / 1000)} --> {_format_time(end_ms / 1000)}\n{clip}\n\n"
-        )
-
+    # duration in ms
+    dur_ms = get_total_audio_duration_ms(wav_path)
+    
+    # 生成 SRT 内容
+    srt_lines = [
+        f"1\n{_format_time(0)} --> {_format_time(dur_ms / 1000)}\n{voice_content}\n\n"
+    ]
     srt_text = "".join(srt_lines)
-    total_ms = current_time_ms
-    return out_wavs, srt_text, total_ms
+    
+    return [wav_path], srt_text, dur_ms
 
 
 @register_method
 class AudioEngineMethod(BaseMethod):
     """
     NAME: 'audio_engine'
-    - 输入：prompt（可选）、text（脚本文本；若空则用 prompt）
+    - 输入：block（包含 voice 或 text 字段）、prompt（可选）、text（脚本文本；若空则用 prompt）
     - 输出：
-        分段 wav：{workdir}/project/{project}/audio/{target_name}_001.wav, ...
-        合并 wav（可选）：{workdir}/project/{project}/audio/{target_name}.wav
+        单个 wav：{workdir}/project/{project}/audio/{target_name}.wav
         字幕 srt：{workdir}/project/{project}/subtitles/{target_name}.srt
     meta:
-        {"total_duration": float, "clips": [<rel paths>], "merged": <rel path or "" >}
+        {"total_duration": float, "clips": [<rel paths>], "merged": <rel path>}
     """
     NAME = "audio_engine"
     OUTPUT_KIND = "audio"
@@ -256,17 +264,30 @@ class AudioEngineMethod(BaseMethod):
         target_name: str,
         text: str,
         workdir: Path,
-        duration_ms: int | None = None
+        duration_ms: int | None = None,
+        block: Optional[ScriptBlock] = None
     ) -> Dict[str, Any]:
         try:
-            script_text = (text or prompt or "").strip()
-            if not script_text:
-                return {
-                    "ok": False,
-                    "artifacts": [],
-                    "meta": {},
-                    "error": "No input text to synthesize (both 'text' and 'prompt' are empty).",
-                }
+            # 优先使用 block 中的 voice/text 内容
+            if block:
+                voice_content = _get_voice_content(block)
+                if not voice_content:
+                    return {
+                        "ok": False,
+                        "artifacts": [],
+                        "meta": {},
+                        "error": "No voice or text content found in block.",
+                    }
+            else:
+                # 回退到原有的 text/prompt 逻辑
+                voice_content = (text or prompt or "").strip()
+                if not voice_content:
+                    return {
+                        "ok": False,
+                        "artifacts": [],
+                        "meta": {},
+                        "error": "No input text to synthesize (both 'text' and 'prompt' are empty).",
+                    }
 
             project_dir = workdir / "project" / project
             project_dir.mkdir(parents=True, exist_ok=True)
@@ -274,9 +295,9 @@ class AudioEngineMethod(BaseMethod):
             # 加载配置（如果存在）
             cfg = _load_audio_config(workdir)
 
-            # 生成分段音频 + srt
+            # 生成音频 + srt
             clips, srt_text, total_sec = _gen_block_audio(
-                script_text=script_text,
+                block=block,
                 project_dir=project_dir,
                 base_name=target_name,
                 cfg=cfg,
@@ -285,23 +306,26 @@ class AudioEngineMethod(BaseMethod):
                 regen=True,   # 如需跳过已存在可改为 False
             )
 
+            if not clips:
+                return {
+                    "ok": False,
+                    "artifacts": [],
+                    "meta": {},
+                    "error": "Failed to generate audio clips.",
+                }
+
             # 写入 srt
             subs_dir = project_dir / "subtitles"
             srt_path = subs_dir / f"{target_name}.srt"
             srt_path.write_text(srt_text, encoding="utf-8")
 
-            # 尝试合并 wav
-            audio_dir = project_dir / "audio"
-            merged_path = audio_dir / f"{target_name}.wav"
-            merged_rel = ""
-            if _concat_wavs_with_ffmpeg(clips, merged_path):
-                merged_rel = str(merged_path.relative_to(project_dir))
+            # 对于单个文件，merged 就是原文件
+            merged_path = clips[0]  # 只有一个文件
+            merged_rel = str(merged_path.relative_to(project_dir))
 
             # 工件 & meta
             artifacts: List[str] = [str(srt_path)]
             artifacts.extend([str(p) for p in clips])
-            if merged_rel:
-                artifacts.append(str(merged_path))
 
             meta = {
                 "project": project,

@@ -13,7 +13,7 @@ from videogen.pipeline.schema import ProjectJSON, ScriptBlock, Decision, Generat
 from videogen.pipeline.utils import read_json, write_json
 from videogen.methods.registry import create_method
 from videogen.llm_engine import get_engine
-from videogen.router.decider import decide_generation_method  # 你会写的模块
+from videogen.router.decider import decide_generation_method
 from dacite import from_dict
 
 load_dotenv()
@@ -30,9 +30,7 @@ def run_pipeline(input_path: Path, workdir: Path,genDecision = False, genAudio =
     for block in blocks:
         print(f"\n🎞️  Processing {block.id} | status={block.status}")
 
-        if block.status == "done" and (block.generation and 'output_path' in block.generation.meta and os.path.exists(block.generation.meta['output_path'])):
-            print("→ Skipped (already done).")
-            continue
+
 
         # --- 决策阶段 ---
         if genDecision and (not block.decision or block.status == "regenerate"):
@@ -57,6 +55,7 @@ def run_pipeline(input_path: Path, workdir: Path,genDecision = False, genAudio =
                     target_name=block.id,
                     text=block.text,
                     workdir=workdir,
+                    block=block,
                 )
             block.audioGeneration = GenerationResult(
                 ok=result.get("ok", False),
@@ -64,8 +63,14 @@ def run_pipeline(input_path: Path, workdir: Path,genDecision = False, genAudio =
                 meta=result.get("meta", {}),
                 error=result.get("error"),
             )
-            totalDuration = block.audioGeneration.meta['total_duration']
+            if block.audioGeneration.ok and 'total_duration' in block.audioGeneration.meta:
+                totalDuration = block.audioGeneration.meta['total_duration']
+            else:
+                raise Exception(f"⚠️  Audio generation failed or missing total_duration for {block.id}")
 
+        if block.status == "done" and (block.generation and 'output_path' in block.generation.meta and os.path.exists(block.generation.meta['output_path'])):
+            print("→ Skipped (already done).")
+            continue
 
         # --- Video Part ---
         try:
@@ -117,4 +122,4 @@ def run_pipeline(input_path: Path, workdir: Path,genDecision = False, genAudio =
 
 
 if __name__ == "__main__":
-    run_pipeline(Path(f"./project/{PROJECT_NAME}/{PROJECT_NAME}.json"), Path("."), True,False,True , True )
+    run_pipeline(Path(f"./project/{PROJECT_NAME}/{PROJECT_NAME}.json"), Path("."), True,False,True , True)
