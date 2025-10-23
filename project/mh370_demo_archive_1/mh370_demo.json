@@ -57,7 +57,8 @@
         "timestamp": "2025-10-16T01:46:33Z"
       },
       "status": "done",
-      "retries": 0
+      "retries": 0,
+      "voice": "Hello 大家好，我是AI老高。咱们今天要聊的，是大家都希望我填的坑，马航 MH370 失踪事件。"
     },
     {
       "id": "L2",
@@ -111,7 +112,8 @@
         "timestamp": "2025-10-16T01:46:37Z"
       },
       "status": "done",
-      "retries": 0
+      "retries": 0,
+      "voice": "时间回到 2014 年 3 月 8 日凌晨。"
     },
     {
       "id": "L3",
@@ -167,7 +169,8 @@
         "timestamp": "2025-10-16T01:47:05Z"
       },
       "status": "done",
-      "retries": 0
+      "retries": 0,
+      "voice": "MH370 从吉隆坡国际机场起飞，目的地北京。"
     },
     {
       "id": "L4",
@@ -225,7 +228,8 @@
         "timestamp": "2025-10-16T01:47:49Z"
       },
       "status": "done",
-      "retries": 0
+      "retries": 0,
+      "voice": "机型是波音 777-200ER，机上共有 239 人：227 名乘客、12 名机组人员，其中超过一半是华人。"
     },
     {
       "id": "L5",
@@ -285,7 +289,8 @@
         "timestamp": "2025-10-16T01:48:28Z"
       },
       "status": "done",
-      "retries": 0
+      "retries": 0,
+      "voice": "机长扎哈里 53 岁，飞行时数超过 1.8 万小时，是马航教官。"
     },
     {
       "id": "L6",
@@ -343,7 +348,8 @@
         "timestamp": "2025-10-16T01:48:59Z"
       },
       "status": "done",
-      "retries": 0
+      "retries": 0,
+      "voice": "副驾驶 27 岁，刚取得 777 副驾资格，但被评价很有天赋。"
     },
     {
       "id": "L7",
@@ -393,7 +399,8 @@
         "timestamp": "2025-10-16T01:49:27Z"
       },
       "status": "done",
-      "retries": 0
+      "retries": 0,
+      "voice": "按理说，这是一次平常到不能再平常的红眼航班。"
     },
     {
       "id": "L8",
@@ -447,7 +454,8 @@
         "timestamp": "2025-10-16T01:49:34Z"
       },
       "status": "done",
-      "retries": 0
+      "retries": 0,
+      "voice": "起飞后，一切正常。飞机按计划爬升到巡航高度，飞向越南空域交界的航点 IGARI。"
     },
     {
       "id": "L9",
@@ -505,7 +513,8 @@
         "timestamp": "2025-10-16T01:49:42Z"
       },
       "status": "done",
-      "retries": 0
+      "retries": 0,
+      "voice": "“晚安，马航三七零（MH370）。” 对，这句平静到不能再平静的告别，是飞机在雷达上消失前，机长留给世界的最后话语。"
     },
     {
       "id": "L10",
@@ -561,7 +570,8 @@
         "timestamp": "2025-10-16T01:49:50Z"
       },
       "status": "done",
-      "retries": 0
+      "retries": 0,
+      "voice": "凌晨 1 点 21 分左右，民航雷达上的应答机突然消失。没有发出任何遇险呼叫，天气也没有问题。就……突然不见了。"
     }
   ],
   "final_audio": "project/mh370_demo/mh370_demo_final.wav",

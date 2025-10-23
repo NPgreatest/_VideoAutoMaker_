@@ -57,7 +57,8 @@
         "timestamp": "2025-10-16T05:33:24Z"
       },
       "status": "done",
-      "retries": 0
+      "retries": 0,
+      "voice": "Hello 大家好，我是老高。咱们今天要聊的，是大家都希望我填的坑，马航 MH370 失踪事件。"
     },
     {
       "id": "L2",
@@ -105,7 +106,8 @@
         "timestamp": "2025-10-16T05:33:38Z"
       },
       "status": "done",
-      "retries": 0
+      "retries": 0,
+      "voice": "时间回到 2014 年 3 月 8 日凌晨。"
     },
     {
       "id": "L3",
@@ -155,7 +157,8 @@
         "timestamp": "2025-10-16T05:33:49Z"
       },
       "status": "done",
-      "retries": 0
+      "retries": 0,
+      "voice": "MH370 从吉隆坡国际机场起飞，目的地北京。"
     }
   ],
   "final_audio": "project/mh370_demo/mh370_demo_final.wav",
