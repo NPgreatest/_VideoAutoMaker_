@@ -109,6 +109,15 @@ class SiliconAudioMethod(BaseMethod):
             if not ok:
                 return {"ok": False, "artifacts": [], "meta": {}, "error": "TTS generation failed."}
 
+            # 计算音频时长
+            try:
+                from pydub.utils import mediainfo
+                info = mediainfo(str(wav_path))
+                total_duration = float(info.get('duration', 0)) * 1000  # 转换为毫秒
+            except Exception as e:
+                print(f"[SiliconTTS] Warning: Could not get audio duration: {e}")
+                total_duration = 0
+
             # ✅ 成功返回
             meta = {
                 "project": project,
@@ -116,6 +125,7 @@ class SiliconAudioMethod(BaseMethod):
                 "character": character,
                 "voice_uri": voice_uri,
                 "audio_path": str(wav_path.relative_to(project_dir)),
+                "total_duration": total_duration,
             }
             return {"ok": True, "artifacts": [str(wav_path)], "meta": meta, "error": None}
 

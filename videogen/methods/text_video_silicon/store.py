@@ -1,6 +1,6 @@
-import csv, threading
+import csv, threading, time
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 class TaskCSV:
     _lock = threading.Lock()  # fine now, no nested locks
@@ -41,3 +41,38 @@ class TaskCSV:
                 f.flush()
 
         print(f"[TaskCSV] ✅ Upserted {rid} (status={row.get('status')})")
+
+    def get_task(self, request_id: str) -> Optional[Dict[str, str]]:
+        """Get a specific task by request_id"""
+        rows = self.get_all()
+        for row in rows:
+            if row.get("request_id") == request_id:
+                return row
+        return None
+
+    def wait_for_completion(self, request_id: str, timeout_seconds: int = 300, poll_interval: float = 2.0) -> Optional[Dict[str, str]]:
+        """
+        Wait for a task to complete (status in TERMINAL states).
+        Returns the final task data or None if timeout/not found.
+        """
+        from .constants import TERMINAL
+        
+        start_time = time.time()
+        print(f"[TaskCSV] Waiting for task {request_id} to complete...")
+        
+        while time.time() - start_time < timeout_seconds:
+            task = self.get_task(request_id)
+            if not task:
+                print(f"[TaskCSV] Task {request_id} not found")
+                return None
+            
+            status = task.get("status", "")
+            if status in TERMINAL:
+                print(f"[TaskCSV] Task {request_id} completed with status: {status}")
+                return task
+            
+            print(f"[TaskCSV] Task {request_id} still {status}, waiting...")
+            time.sleep(poll_interval)
+        
+        print(f"[TaskCSV] Timeout waiting for task {request_id}")
+        return None

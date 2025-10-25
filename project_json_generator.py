@@ -17,7 +17,8 @@ def main():
             continue
         script.append({
             "id": f"L{line_num}",
-            "text": line
+            "text": line,
+            "voice": line,
         })
         line_num += 1
 

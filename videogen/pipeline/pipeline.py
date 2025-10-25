@@ -2,19 +2,20 @@
 from __future__ import annotations
 
 import os.path
-from pathlib import Path
+import time
+import random
 from datetime import datetime, timezone
+from pathlib import Path
 
+from dacite import from_dict
 from dotenv import load_dotenv
 
-from videogen.methods import react_render, text_video_silicon, subtitle_only
 from videogen.methods.audio_engine.utils import get_total_audio_duration_ms
-from videogen.pipeline.schema import ProjectJSON, ScriptBlock, Decision, GenerationResult
-from videogen.pipeline.utils import read_json, write_json
 from videogen.methods.registry import create_method
-from videogen.llm_engine import get_engine
+import videogen.methods  # This ensures all methods are registered
+from videogen.pipeline.schema import ScriptBlock, Decision, GenerationResult
+from videogen.pipeline.utils import read_json, write_json
 from videogen.router.decider import decide_generation_method
-from dacite import from_dict
 
 load_dotenv()
 PROJECT_NAME = os.getenv("PROJECT_NAME")
@@ -42,13 +43,13 @@ def run_pipeline(input_path: Path, workdir: Path,genDecision = False, genAudio =
         # process Audio part
         totalDuration = None # duration is based from audio
         if block.audioGeneration and block.audioGeneration.ok:
-            audioPath = block.audioGeneration.meta['merged']
+            audioPath = block.audioGeneration.meta['audio_path']
             project_dir = workdir / "project" / project
             fullPath = project_dir / audioPath
             totalDuration = get_total_audio_duration_ms(fullPath)
 
         if genAudio:
-            audioMethod = create_method('audio_engine')
+            audioMethod = create_method('silicon_audio')
             result = audioMethod.run(
                     prompt=block.prompt,
                     project=project,
@@ -80,15 +81,44 @@ def run_pipeline(input_path: Path, workdir: Path,genDecision = False, genAudio =
                 block.prompt = method.generate_prompt(block.text)
 
             if genMedia:
-                result = method.run(
-                    prompt=block.prompt,
-                    project=project,
-                    target_name=block.id,
-                    text=block.text,
-                    workdir=workdir,
-                    duration_ms=totalDuration,
-                    block = block,
-                )
+                # Retry logic for API rate limits
+                max_retries = 3
+                base_delay = 2.0
+                
+                for attempt in range(max_retries):
+                    try:
+                        result = method.run(
+                            prompt=block.prompt,
+                            project=project,
+                            target_name=block.id,
+                            text=block.text,
+                            workdir=workdir,
+                            duration_ms=totalDuration,
+                            block=block,
+                        )
+                        break  # Success, exit retry loop
+                    except Exception as e:
+                        if attempt == max_retries - 1:
+                            # Last attempt failed, re-raise the exception
+                            raise e
+                        
+                        # Check if it's a retryable error
+                        error_msg = str(e).lower()
+                        retryable_keywords = [
+                            'rate limit', 'too many requests', '429', 'throttle',
+                            'timeout', 'connection', 'network', 'temporary',
+                            'service unavailable', '502', '503', '504'
+                        ]
+                        
+                        if any(keyword in error_msg for keyword in retryable_keywords):
+                            delay = base_delay * (2 ** attempt) + random.uniform(0, 2)
+                            print(f"⚠️  Retryable error for {block.id}: {e}")
+                            print(f"    Retrying in {delay:.2f}s... (attempt {attempt + 1}/{max_retries})")
+                            time.sleep(delay)
+                        else:
+                            # Not a retryable error, re-raise immediately
+                            print(f"❌ Non-retryable error for {block.id}: {e}")
+                            raise e
 
                 block.generation = GenerationResult(
                     ok=result.get("ok", False),
@@ -117,6 +147,12 @@ def run_pipeline(input_path: Path, workdir: Path,genDecision = False, genAudio =
 
         write_json(input_path, raw)
         print(f"→ Updated JSON ({block.status})")
+        
+        # Small delay between video generation requests to prevent rate limiting
+        if genMedia and block.decision.method == "text_video_silicon":
+            delay = random.uniform(1.0, 3.0)
+            print(f"⏸️  Waiting {delay:.1f}s before next request to avoid rate limits...")
+            time.sleep(delay)
 
     print("\n✅ Pipeline finished.")
 

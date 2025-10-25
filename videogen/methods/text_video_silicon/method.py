@@ -78,20 +78,55 @@ class TextVideoSilicon(BaseMethod):
         }
         store.upsert(row)
 
-        db_path = Path(DB_PATH).resolve()
-        return {
-            "ok": True,
-            "artifacts": [],
-            "meta": {
-                "request_id": request_id,
-                "project": project,
-                "target_name": target_name,
-                "status": STATUS_SUBMITTED,
-                "output_path": str(workdir / "project" / project / f"{target_name}.mp4"),
-                "db_path": str(db_path),
-            },
-            "error": None,
-        }
+        # Always wait for completion for text_video_silicon method
+        print(f"⏳ Waiting for video generation to complete for {target_name}...")
+        completed_task = store.wait_for_completion(request_id, timeout_seconds=300)
+        
+        if completed_task:
+            status = completed_task.get("status", "")
+            output_path = completed_task.get("output_path", "")
+            error = completed_task.get("error", "")
+            
+            if status == "succeed" and output_path and os.path.exists(output_path):
+                return {
+                    "ok": True,
+                    "artifacts": [output_path],
+                    "meta": {
+                        "request_id": request_id,
+                        "project": project,
+                        "target_name": target_name,
+                        "status": status,
+                        "output_path": output_path,
+                        "source_url": completed_task.get("source_url", ""),
+                    },
+                    "error": None,
+                }
+            else:
+                return {
+                    "ok": False,
+                    "artifacts": [],
+                    "meta": {
+                        "request_id": request_id,
+                        "project": project,
+                        "target_name": target_name,
+                        "status": status,
+                        "output_path": output_path,
+                    },
+                    "error": error or f"Task failed with status: {status}",
+                }
+        else:
+            return {
+                "ok": False,
+                "artifacts": [],
+                "meta": {
+                    "request_id": request_id,
+                    "project": project,
+                    "target_name": target_name,
+                    "status": "timeout",
+                    "output_path": "",
+                },
+                "error": f"Timeout waiting for task completion (300s)",
+            }
 
     def generate_prompt(self, text: str) -> str:
         """
